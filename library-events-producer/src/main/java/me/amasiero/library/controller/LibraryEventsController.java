@@ -3,6 +3,7 @@ package me.amasiero.library.controller;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import lombok.AllArgsConstructor;
 import me.amasiero.library.domain.LibraryEvent;
+import me.amasiero.library.domain.LibraryEventType;
 import me.amasiero.library.producer.LibraryEventProducer;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -18,6 +19,7 @@ public class LibraryEventsController {
 
     @PostMapping("/v1/library-event")
     public ResponseEntity<LibraryEvent> create(@RequestBody LibraryEvent libraryEvent) throws JsonProcessingException {
+        libraryEvent.setType(LibraryEventType.CREATE);
         libraryEventProducer.sendLibraryEvent("library-events", libraryEvent);
         return ResponseEntity.status(HttpStatus.CREATED).body(libraryEvent);
     }
