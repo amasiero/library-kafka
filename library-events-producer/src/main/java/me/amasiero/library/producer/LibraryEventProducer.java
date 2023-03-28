@@ -5,6 +5,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import me.amasiero.library.domain.LibraryEvent;
+import org.apache.kafka.clients.producer.ProducerRecord;
+import org.springframework.boot.availability.LivenessState;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.support.SendResult;
 import org.springframework.stereotype.Component;
@@ -18,6 +20,11 @@ public class LibraryEventProducer {
     private final KafkaTemplate<Long, String> kafkaTemplate;
     private final ObjectMapper objectMapper;
 
+    /**
+     * It publishes the topic defined in spring.kafka.template.default-topic
+     * @param libraryEvent - Object which represents the message to be published
+     * @throws JsonProcessingException
+     */
     public void sendLibraryEvent(LibraryEvent libraryEvent) throws JsonProcessingException {
         Long key = libraryEvent.getId();
         String value = objectMapper.writeValueAsString(libraryEvent);
@@ -30,6 +37,25 @@ public class LibraryEventProducer {
                handlerFailure(key, value, ex);
            }
         });
+    }
+
+    public void sendLibraryEvent(String topic, LibraryEvent libraryEvent) throws JsonProcessingException {
+        Long key = libraryEvent.getId();
+        String value = objectMapper.writeValueAsString(libraryEvent);
+
+        ProducerRecord<Long, String> producerRecord = buildProducerRecord(topic, key, value);
+        CompletableFuture<SendResult<Long, String>> future = kafkaTemplate.send(producerRecord);
+        future.whenComplete((result, ex) -> {
+            if (ex == null) {
+                handlerSuccess(key, value, result);
+            } else {
+                handlerFailure(key, value, ex);
+            }
+        });
+    }
+
+    private ProducerRecord<Long, String> buildProducerRecord(String topic, Long key, String value) {
+        return new ProducerRecord<>(topic, null, key, value);
     }
 
     private Void handlerFailure(Long key, String value, Throwable ex) {
