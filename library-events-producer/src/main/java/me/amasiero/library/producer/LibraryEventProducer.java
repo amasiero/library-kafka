@@ -6,11 +6,13 @@ import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import me.amasiero.library.domain.LibraryEvent;
 import org.apache.kafka.clients.producer.ProducerRecord;
-import org.springframework.boot.availability.LivenessState;
+import org.apache.kafka.common.header.Header;
+import org.apache.kafka.common.header.internals.RecordHeader;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.support.SendResult;
 import org.springframework.stereotype.Component;
 
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 @Component
@@ -55,7 +57,8 @@ public class LibraryEventProducer {
     }
 
     private ProducerRecord<Long, String> buildProducerRecord(String topic, Long key, String value) {
-        return new ProducerRecord<>(topic, null, key, value);
+        List<Header> headers = List.of(new RecordHeader("event-source", "manual-scanner".getBytes()));
+        return new ProducerRecord<Long, String>(topic, null, key, value, headers);
     }
 
     private Void handlerFailure(Long key, String value, Throwable ex) {
