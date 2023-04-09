@@ -41,7 +41,7 @@ public class LibraryEventProducer {
         });
     }
 
-    public void sendLibraryEvent(String topic, LibraryEvent libraryEvent) throws JsonProcessingException {
+    public CompletableFuture<SendResult<Long, String>> sendLibraryEvent(String topic, LibraryEvent libraryEvent) throws JsonProcessingException {
         Long key = libraryEvent.getId();
         String value = objectMapper.writeValueAsString(libraryEvent);
 
@@ -54,6 +54,8 @@ public class LibraryEventProducer {
                 handlerFailure(key, value, ex);
             }
         });
+
+        return future;
     }
 
     private ProducerRecord<Long, String> buildProducerRecord(String topic, Long key, String value) {

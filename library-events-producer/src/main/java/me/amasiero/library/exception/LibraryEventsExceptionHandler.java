@@ -10,6 +10,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 
+import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -30,6 +31,7 @@ public class LibraryEventsExceptionHandler {
                         .field(fieldError.getField())
                         .message(fieldError.getDefaultMessage())
                         .build())
+                .sorted(Comparator.comparing(Error::getField))
                 .collect(Collectors.toList());
         log.info("errors: {}", objectMapper.writeValueAsString(errors));
 

@@ -15,7 +15,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
 import static org.mockito.ArgumentMatchers.isA;
-import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -51,7 +51,7 @@ public class LibraryEventsControllerTest {
 
         String json = objectMapper.writeValueAsString(event);
 
-        doNothing().when(libraryEventProducer).sendLibraryEvent(isA(LibraryEvent.class));
+        when(libraryEventProducer.sendLibraryEvent(isA(String.class), isA(LibraryEvent.class))).thenReturn(null);
 
         // Expected
         mockMvc.perform(
@@ -73,7 +73,7 @@ public class LibraryEventsControllerTest {
 
         String json = objectMapper.writeValueAsString(event);
 
-        doNothing().when(libraryEventProducer).sendLibraryEvent(isA(LibraryEvent.class));
+        when(libraryEventProducer.sendLibraryEvent(isA(String.class), isA(LibraryEvent.class))).thenReturn(null);
 
         String expectedContent = "[{\"field\":\"book\",\"message\":\"must not be null\"}]";
 
@@ -105,7 +105,7 @@ public class LibraryEventsControllerTest {
 
         String json = objectMapper.writeValueAsString(event);
 
-        doNothing().when(libraryEventProducer).sendLibraryEvent(isA(LibraryEvent.class));
+        when(libraryEventProducer.sendLibraryEvent(isA(String.class), isA(LibraryEvent.class))).thenReturn(null);
 
         String expectedContent = "[{\"field\":\"book.author\",\"message\":\"must not be blank\"}," +
                 "{\"field\":\"book.name\",\"message\":\"must not be blank\"}]";
