@@ -1,5 +1,6 @@
 package me.amasiero.library.domain;
 
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -14,5 +15,6 @@ public class LibraryEvent {
     private Long id;
     private LibraryEventType type;
     @NotNull
+    @Valid
     private Book book;
 }
