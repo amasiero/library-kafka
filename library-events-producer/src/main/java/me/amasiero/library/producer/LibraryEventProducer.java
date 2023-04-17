@@ -13,6 +13,7 @@ import org.springframework.kafka.support.SendResult;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
+import java.util.Random;
 import java.util.concurrent.CompletableFuture;
 
 @Component
@@ -21,6 +22,7 @@ import java.util.concurrent.CompletableFuture;
 public class LibraryEventProducer {
     private final KafkaTemplate<Long, String> kafkaTemplate;
     private final ObjectMapper objectMapper;
+    private final Random random = new Random(100);
 
     /**
      * It publishes the topic defined in spring.kafka.template.default-topic
@@ -28,6 +30,7 @@ public class LibraryEventProducer {
      * @throws JsonProcessingException
      */
     public void sendLibraryEvent(LibraryEvent libraryEvent) throws JsonProcessingException {
+        if (libraryEvent.getId() == null) libraryEvent.setId(random.nextLong(100));
         Long key = libraryEvent.getId();
         String value = objectMapper.writeValueAsString(libraryEvent);
 
@@ -42,6 +45,7 @@ public class LibraryEventProducer {
     }
 
     public CompletableFuture<SendResult<Long, String>> sendLibraryEvent(String topic, LibraryEvent libraryEvent) throws JsonProcessingException {
+        if (libraryEvent.getId() == null) libraryEvent.setId(random.nextLong(100));
         Long key = libraryEvent.getId();
         String value = objectMapper.writeValueAsString(libraryEvent);
 
