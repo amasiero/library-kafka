@@ -17,6 +17,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import static org.mockito.ArgumentMatchers.isA;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -44,7 +45,7 @@ public class LibraryEventsControllerTest {
                 .build();
 
         LibraryEvent event = LibraryEvent.builder()
-                .id(null)
+                .id(42L)
                 .book(book)
                 .type(LibraryEventType.CREATE)
                 .build();
@@ -66,7 +67,7 @@ public class LibraryEventsControllerTest {
     public void whenLibraryEventPostIsRequested_thenReturnBookNotNullException() throws Exception {
         // Given
         LibraryEvent event = LibraryEvent.builder()
-                .id(null)
+                .id(42L)
                 .book(null)
                 .type(LibraryEventType.CREATE)
                 .build();
@@ -98,7 +99,7 @@ public class LibraryEventsControllerTest {
                 .build();
 
         LibraryEvent event = LibraryEvent.builder()
-                .id(null)
+                .id(42L)
                 .book(book)
                 .type(LibraryEventType.CREATE)
                 .build();
@@ -118,5 +119,61 @@ public class LibraryEventsControllerTest {
                 .andExpect(status().is4xxClientError())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                 .andExpect(content().string(expectedContent)); // Then
+    }
+
+    @Test
+    @DisplayName("when library event put is requested given an id then return 200 - http status ok")
+    public void whenLibraryEventPutIsRequested_givenAnId_thenReturnHttpStatusOk() throws Exception {
+        // Given
+        Book book = Book.builder()
+                .id(123L)
+                .author("test")
+                .name("test")
+                .build();
+
+        LibraryEvent event = LibraryEvent.builder()
+                .id(42L)
+                .book(book)
+                .type(LibraryEventType.CREATE)
+                .build();
+
+        String json = objectMapper.writeValueAsString(event);
+
+        when(libraryEventProducer.sendLibraryEvent(isA(String.class), isA(LibraryEvent.class))).thenReturn(null);
+
+        // Expected
+        mockMvc.perform(
+                put("/v1/library-event")
+                        .content(json)
+                        .contentType(MediaType.APPLICATION_JSON_VALUE)
+        ).andExpect(status().isOk()); // Then
+    }
+
+    @Test
+    @DisplayName("when library event put is requested given no id then return 400 - bad request")
+    public void whenLibraryEventPutIsRequested_givenNoId_thenReturnBadRequest() throws Exception {
+        // Given
+        Book book = Book.builder()
+                .id(123L)
+                .author("test")
+                .name("test")
+                .build();
+
+        LibraryEvent event = LibraryEvent.builder()
+                .id(null)
+                .book(book)
+                .type(LibraryEventType.CREATE)
+                .build();
+
+        String json = objectMapper.writeValueAsString(event);
+
+        when(libraryEventProducer.sendLibraryEvent(isA(String.class), isA(LibraryEvent.class))).thenReturn(null);
+
+        // Expected
+        mockMvc.perform(
+                put("/v1/library-event")
+                        .content(json)
+                        .contentType(MediaType.APPLICATION_JSON_VALUE)
+        ).andExpect(status().isBadRequest()); // Then
     }
 }

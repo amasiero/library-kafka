@@ -144,5 +144,5 @@ public class LibraryEventsControllerIntegrationTest {
         assertEquals(HttpStatus.OK, responseEntity.getStatusCode());
         assertEquals(expectedValue, result.value());
     }
-    
+
 }
