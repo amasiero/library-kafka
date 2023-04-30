@@ -22,11 +22,23 @@ public class LibraryEventService {
             log.info("Received event: {}", libraryEvent);
             switch (libraryEvent.getType()) {
                 case CREATE -> save(libraryEvent);
+                case UPDATE -> {
+                    validate(libraryEvent);
+                    save(libraryEvent);
+                }
                 default -> log.warn("Unsupported event type: {}", libraryEvent.getType());
             }
         } catch (Exception e) {
             log.error("Error processing event: {}", consumerRecord.value(), e);
         }
+    }
+    
+    private void validate(LibraryEvent libraryEvent) {
+        if (libraryEvent.getId() == null) throw new IllegalArgumentException("Event must have an id");
+        LibraryEvent existingEvent = libraryEventRepository.findById(libraryEvent.getId())
+                .orElseThrow(() ->
+                        new IllegalArgumentException("Event %d does not exist".formatted(libraryEvent.getId())));
+        log.info("Validating event: {}", existingEvent);
     }
 
     private void save(LibraryEvent libraryEvent) {
