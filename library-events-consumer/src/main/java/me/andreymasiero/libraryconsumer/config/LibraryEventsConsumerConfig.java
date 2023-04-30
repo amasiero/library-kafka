@@ -1,9 +1,9 @@
 package me.andreymasiero.libraryconsumer.config;
 
-import org.springframework.beans.factory.annotation.Configurable;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.kafka.annotation.EnableKafka;
 
-@Configurable
+@Configuration
 @EnableKafka
 public class LibraryEventsConsumerConfig {
 }

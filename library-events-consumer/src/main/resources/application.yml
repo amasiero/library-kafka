@@ -5,9 +5,11 @@ server:
   port: 8081
 ---
 spring:
-  profiles: local
+  config:
+    active:
+      on-profile: local
   kafka:
-    consumers:
+    consumer:
       bootstrap-servers: localhost:9092, localhost:9093, localhost:9094
       key-deserializer: org.apache.kafka.common.serialization.LongDeserializer
       value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
@@ -25,9 +27,11 @@ spring:
 
 ---
 spring:
-  profiles: stage
+  config:
+    active:
+      on-profile: stage
   kafka:
-    consumers:
+    consumer:
       bootstrap-servers: localhost:9092, localhost:9093, localhost:9094
       key-deserializer: org.apache.kafka.common.serialization.LongDeserializer
       value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
@@ -35,9 +39,11 @@ spring:
 
 ---
 spring:
-  profiles: prod
+  config:
+    active:
+      on-profile: production
   kafka:
-    consumers:
+    consumer:
       bootstrap-servers: localhost:9092, localhost:9093, localhost:9094
       key-deserializer: org.apache.kafka.common.serialization.LongDeserializer
       value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
