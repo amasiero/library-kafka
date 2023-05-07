@@ -4,17 +4,17 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import me.andreymasiero.libraryconsumer.entity.LibraryEvent;
-import me.andreymasiero.libraryconsumer.repository.LibraryEventRepository;
+import me.andreymasiero.libraryconsumer.repository.LibraryEventsRepository;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.springframework.stereotype.Service;
 
 @Service
 @Slf4j
 @AllArgsConstructor
-public class LibraryEventService {
+public class LibraryEventsService {
 
     private final ObjectMapper objectMapper;
-    private final LibraryEventRepository libraryEventRepository;
+    private final LibraryEventsRepository libraryEventRepository;
 
     public void processEvent(ConsumerRecord<Long, String> consumerRecord) {
         try {

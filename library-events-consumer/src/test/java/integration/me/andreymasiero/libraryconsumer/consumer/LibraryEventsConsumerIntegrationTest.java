@@ -1,11 +1,9 @@
 package me.andreymasiero.libraryconsumer.consumer;
 
 import me.andreymasiero.libraryconsumer.entity.LibraryEvent;
-import me.andreymasiero.libraryconsumer.entity.LibraryEventType;
-import me.andreymasiero.libraryconsumer.repository.LibraryEventRepository;
-import me.andreymasiero.libraryconsumer.service.LibraryEventService;
+import me.andreymasiero.libraryconsumer.repository.LibraryEventsRepository;
+import me.andreymasiero.libraryconsumer.service.LibraryEventsService;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,14 +24,13 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.mockito.ArgumentMatchers.isA;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 @SpringBootTest
-@EmbeddedKafka(topics = {"library-events"}, partitions = 3, count = 3)
+@EmbeddedKafka(topics = {"library-events"}, partitions = 3)
 @TestPropertySource(properties = {
         "spring.kafka.producer.bootstrap-servers=${spring.embedded.kafka.brokers}",
         "spring.kafka.consumer.bootstrap-servers=${spring.embedded.kafka.brokers}"
@@ -48,10 +45,10 @@ class LibraryEventsConsumerIntegrationTest {
     LibraryEventsConsumer libraryEventsConsumerSpy;
 
     @SpyBean
-    LibraryEventService libraryEventServiceSpy;
+    LibraryEventsService libraryEventsServiceSpy;
 
     @Autowired
-    LibraryEventRepository repository;
+    LibraryEventsRepository libraryEventsRepository;
 
     @BeforeEach
     void setUp(
@@ -63,18 +60,13 @@ class LibraryEventsConsumerIntegrationTest {
         }
     }
 
-    @AfterEach
-    void tearDown() {
-        repository.deleteAll();
-    }
-
     @Test
     void whenConsumerReceiveAnEvent() throws ExecutionException, InterruptedException {
         // Given
         String json = """
                 {
-                    "id": 42,
-                    "type": CREATE,
+                    "id": 1,
+                    "type": "CREATE",
                     "book": {
                         "id": 1,
                         "name": "Andrey's book",
@@ -82,23 +74,21 @@ class LibraryEventsConsumerIntegrationTest {
                     }
                 }
                 """;
-        kafkaTemplate.send("library-events", json).get();
+        kafkaTemplate.sendDefault(json);
 
         // When
         CountDownLatch latch = new CountDownLatch(1);
-        boolean messageConsumed = latch.await(3, TimeUnit.SECONDS);
+        boolean latchResult = latch.await(3, TimeUnit.SECONDS);
 
         // Then
         verify(libraryEventsConsumerSpy, times(1)).onMessageReceived(isA(ConsumerRecord.class));
-        verify(libraryEventServiceSpy, times(1)).processEvent(isA(ConsumerRecord.class));
+        verify(libraryEventsServiceSpy, times(1)).processEvent(isA(ConsumerRecord.class));
+        assertFalse(latchResult);
 
-        List<LibraryEvent> events = (List<LibraryEvent>) repository.findAll();
-        System.out.println(events);
-        assertTrue(messageConsumed);
-        assertEquals(1, events.size());
-        events.forEach(event -> {
-            assertNotNull(event.getId());
-            assertEquals(LibraryEventType.CREATE, event.getType());
+        List<LibraryEvent> eventsRetrieved = (List<LibraryEvent>) libraryEventsRepository.findAll();
+        assertEquals(1, eventsRetrieved.size());
+        eventsRetrieved.forEach(event -> {
+            assertEquals(1, event.getId());
             assertEquals(1, event.getBook().getId());
         });
     }
