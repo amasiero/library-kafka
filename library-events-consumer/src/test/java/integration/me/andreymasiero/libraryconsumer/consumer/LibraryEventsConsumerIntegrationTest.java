@@ -1,6 +1,10 @@
 package me.andreymasiero.libraryconsumer.consumer;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import me.andreymasiero.libraryconsumer.entity.Book;
 import me.andreymasiero.libraryconsumer.entity.LibraryEvent;
+import me.andreymasiero.libraryconsumer.entity.LibraryEventType;
 import me.andreymasiero.libraryconsumer.repository.LibraryEventsRepository;
 import me.andreymasiero.libraryconsumer.service.LibraryEventsService;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
@@ -23,8 +27,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.isA;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -50,6 +53,8 @@ class LibraryEventsConsumerIntegrationTest {
     @Autowired
     LibraryEventsRepository libraryEventsRepository;
 
+    ObjectMapper objectMapper = new ObjectMapper();
+
     @BeforeEach
     void setUp(
             @Autowired EmbeddedKafkaBroker embeddedKafkaBroker,
@@ -61,7 +66,8 @@ class LibraryEventsConsumerIntegrationTest {
     }
 
     @Test
-    void whenConsumerReceiveAnEvent() throws ExecutionException, InterruptedException {
+    @SuppressWarnings("unchecked")
+    void whenConsumerReceiveAnEvent() throws InterruptedException {
         // Given
         String json = """
                 {
@@ -91,6 +97,48 @@ class LibraryEventsConsumerIntegrationTest {
             assertEquals(1, event.getId());
             assertEquals(1, event.getBook().getId());
         });
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void whenConsumerReceiveAnUpdateEvent() throws JsonProcessingException, ExecutionException, InterruptedException {
+        // Given
+        String json = """
+                {
+                    "id": 1,
+                    "type": "CREATE",
+                    "book": {
+                        "id": 1,
+                        "name": "Andrey's book",
+                        "author": "Andrey"
+                    }
+                }
+                """;
+        LibraryEvent event = objectMapper.readValue(json, LibraryEvent.class);
+        event.getBook().setLibraryEvent(event);
+        libraryEventsRepository.save(event);
+
+        Book updatedBook = Book.builder()
+                .id(1L)
+                .name("Andrey's book updated")
+                .author("Andrey")
+                .build();
+        event.setType(LibraryEventType.UPDATE);
+        event.setBook(updatedBook);
+
+        // When
+        kafkaTemplate.sendDefault(event.getId(), objectMapper.writeValueAsString(event)).get();
+        CountDownLatch latch = new CountDownLatch(1);
+        boolean latchResult = latch.await(3, TimeUnit.SECONDS);
+
+        // Then
+        verify(libraryEventsConsumerSpy, times(1)).onMessageReceived(isA(ConsumerRecord.class));
+        verify(libraryEventsServiceSpy, times(1)).processEvent(isA(ConsumerRecord.class));
+        assertFalse(latchResult);
+
+        LibraryEvent persistedEvent = libraryEventsRepository.findById(event.getId()).orElse(null);
+        assertNotNull(persistedEvent);
+        assertEquals("Andrey's book updated", persistedEvent.getBook().getName());
     }
 
 
